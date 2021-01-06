@@ -1,17 +1,12 @@
 package com.learn.reactive.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -19,6 +14,9 @@ public class GreetingHandler {
 
     @Autowired
     UserRepository userRepository;
+
+    //@Autowired
+    //UserRepositoryReactive userRepositoryReactive;
 
     public Mono<ServerResponse> hello(ServerRequest request) {
         return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
@@ -36,13 +34,23 @@ public class GreetingHandler {
     public Mono<ServerResponse> insertUser(ServerRequest request) {
         Mono<User> userMono = request.bodyToMono(User.class);
 
+        final User user = new User();
 
+        //userRepositoryReactive.save(userMono.block()).block();
 
-        return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
-                .body(BodyInserters.fromValue("Hello, Spring 2!"));
-    }
+        try {
+            userMono.subscribe(u->{
+                user.setUserId(u.getUserId());
+                user.setUserSettings(u.getUserSettings());
+                user.setName(u.getName());
 
-    private void save(User user){
-        userRepository.save(user);
+                userRepository.save(user);
+            }).wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN).body(BodyInserters.fromValue("Hello, Spring 2!"));
+
     }
 }
