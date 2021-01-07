@@ -32,25 +32,62 @@ public class GreetingHandler {
     }
 
     public Mono<ServerResponse> insertUser(ServerRequest request) {
-        Mono<User> userMono = request.bodyToMono(User.class);
 
+
+
+
+        /*return request.bodyToMono(User.class)
+                .map(this::mapToUser)
+                .log()
+                .doOnNext(userRepository::save)
+                .then(ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
+                .body(BodyInserters.fromValue("Hello, Spring 2!")));*/
+
+        /*return request.bodyToMono(User.class)
+                .map(this::mapToUser)
+                .log()
+                .doOnNext(userRepository::save)
+                .flatMap(u-> ServerResponse
+                        .ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(BodyInserters.fromValue(u.getName())));*/
+
+        /*return request.bodyToMono(User.class)
+                .map(this::mapToUser)
+                .log()
+                .doOnNext(userRepository::save)
+                .flatMap(u-> ServerResponse
+                        .ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(BodyInserters.fromValue(u.getName())))
+                .onErrorResume(e -> Mono.just("Error " + e.getMessage())
+                        .flatMap(s -> ServerResponse.badRequest()
+                                .contentType(MediaType.TEXT_PLAIN)
+                                .body(BodyInserters.fromValue(s))));*/
+
+        return request.bodyToMono(User.class)
+                .map(this::mapToUser)
+                .log()
+                .doOnNext(userRepository::save)
+                .flatMap(u-> ServerResponse
+                        .ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(BodyInserters.fromValue(u.getName())))
+                .onErrorResume(e -> ServerResponse.badRequest()
+                                .contentType(MediaType.TEXT_PLAIN)
+                                .body(BodyInserters.fromValue("Error 123 : "+e.getMessage())));
+
+
+
+    }
+
+
+    User mapToUser(User u){
         final User user = new User();
-
-        //userRepositoryReactive.save(userMono.block()).block();
-
-        try {
-            userMono.subscribe(u->{
-                user.setUserId(u.getUserId());
-                user.setUserSettings(u.getUserSettings());
-                user.setName(u.getName());
-
-                userRepository.save(user);
-            }).wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN).body(BodyInserters.fromValue("Hello, Spring 2!"));
-
+        user.setUserId(u.getUserId());
+        user.setUserSettings(u.getUserSettings());
+        user.setName(u.getName());
+        throw new RuntimeException("Error custom ");
+        //return user;
     }
 }
